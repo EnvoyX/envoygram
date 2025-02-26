@@ -1,3 +1,5 @@
+import ModeToggle from "@/components/ModeToggle";
+import { Button } from "@/components/ui/button";
 import {
   SignedIn,
   SignedOut,
@@ -11,13 +13,16 @@ export default function Home() {
     <div>
       <SignedOut>
         <SignInButton mode="modal">
-          <button className="bg-red-500">Sign in</button>
+          <Button>Sign in</Button>
         </SignInButton>
-        <SignUpButton mode="modal" />
+        <SignUpButton mode="modal">
+          <Button variant={"ghost"}>Sign up</Button>
+        </SignUpButton>
       </SignedOut>
       <SignedIn>
         <UserButton />
       </SignedIn>
+      <ModeToggle></ModeToggle>
     </div>
   );
 }
