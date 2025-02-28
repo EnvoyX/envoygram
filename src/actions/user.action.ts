@@ -2,6 +2,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import toast from "react-hot-toast";
+import {revalidatePath} from "next/cache";
 
 export async function syncUser() {
   try {
@@ -53,4 +55,92 @@ export const getDbUserId = async () => {
   const user = await getUserByClerkId(clerkId)
   if (!user) throw new Error('User not found');
   return user.id;
+}
+
+export const getRandomUsers = async () => {
+  try{
+    const userId = await getDbUserId();
+
+    // Get 3 random users exclude user's own profile & followed users
+    const randomUsers = await prisma.user.findMany({
+      where: {
+        AND:[
+          {NOT:{id:userId}},
+          {
+            NOT:{
+              followers:{
+                some:{
+                  followerId: userId
+                }
+              }
+            }
+          }
+        ]
+      }, select:{
+        id: true,
+        name: true,
+        username: true,
+        image : true,
+        _count: {
+          select: {
+            followers: true,
+          }
+        }
+      }, take: 3,
+    })
+    return randomUsers;
+  }catch (error) {
+    console.log("Error while retrieving users", error);
+  }
+}
+
+export const toggleFollow = async (targetUserId:string) => {
+  try {
+    const userId = await getDbUserId();
+    if (userId === targetUserId) throw new Error('You cannot follow yourself!');
+    const existingFollow = await prisma.follows.findUnique({
+      where:{
+        followerId_followingId : {
+          followerId: userId,
+          followingId: targetUserId,
+        }
+      }
+    })
+
+    if (existingFollow){
+      // Unfollow user
+      await prisma.follows.delete({
+        where:{
+          followerId_followingId:{
+            followerId: userId,
+            followingId: targetUserId,
+          }
+        }
+      })
+    }else {
+      // Follow
+      await prisma.$transaction([
+          prisma.follows.create({
+            data:{
+              followerId: userId,
+              followingId: targetUserId,
+            }
+          }),
+          prisma.notification.create({
+            data:{
+              type: "FOLLOW",
+              userId: targetUserId, // User being followed
+              creatorId: userId, // User that following
+            }
+          })
+      ])
+    }
+    revalidatePath("/")
+    return {success: true};
+  }
+  catch (err) {
+    console.log("Error while following user", err);
+    return {success: false, error: "Error while following user"};
+
+  }
 }
