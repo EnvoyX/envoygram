@@ -1,7 +1,9 @@
-import {getProfileByUsername} from "@/actions/profile.action";
+import {getProfileByUsername, getUserLikedPosts, getUserPosts, isFollowing} from "@/actions/profile.action";
+import NotFound from "@/app/profile/[username]/not-found";
+import ProfilePageClient from "@/components/ProfilePageClient";
 
 
-// Update Metadata
+// Update Metadata Dynamically
 export const generateMetadata = async ({params}: { params: { username: string } }) => {
     const user = await getProfileByUsername(params.username)
     if (!user) return;
@@ -13,10 +15,19 @@ export const generateMetadata = async ({params}: { params: { username: string } 
 }
 
 
-function ProfilePage({params}: { params: { username: string } }) {
-    console.log("Params:", params);
-    return <div>Profile Page</div>
+async function ProfilePageServer({params}: { params: { username: string } }) {
+    const user = await getProfileByUsername(params.username);
+    if (!user) return NotFound();
+
+    const [posts, likedPosts, isCurrentUserFollowing] = await Promise.all([
+        getUserPosts(user.id),
+        getUserLikedPosts(user.id),
+        isFollowing(user.id),
+    ])
+    console.log("Params:", params.username);
+    return <ProfilePageClient user={user} posts={posts} likedPosts={likedPosts}
+                              isFollowing={isCurrentUserFollowing}></ProfilePageClient>
 
 }
 
-export default ProfilePage;
+export default ProfilePageServer;

@@ -179,7 +179,6 @@ export async function isFollowing(userId: string) {
     try {
         const currentUserId = await getDbUserId();
         if (!currentUserId) return false;
-
         const follow = await prisma.follows.findUnique({
             where: {
                 followerId_followingId: {
