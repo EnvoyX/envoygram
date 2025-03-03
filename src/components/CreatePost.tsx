@@ -6,23 +6,24 @@ import {Card, CardContent} from "@/components/ui/card";
 import {Avatar, AvatarImage} from "@/components/ui/avatar";
 import {Textarea} from "@/components/ui/textarea";
 import {Button} from "@/components/ui/button";
-import {ImageIcon, Loader2Icon, SendIcon} from "lucide-react";
+import {Car, ImageIcon, Loader2Icon, SendIcon} from "lucide-react";
 import {createPost} from "@/actions/post.action";
 import toast from "react-hot-toast";
+import ImageUpload from "@/components/ImageUpload";
 
-const CreatePost = () =>{
+const CreatePost = () => {
     const {user} = useUser();
     const [content, setContent] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [isPosting, setIsPosting] = useState(false);
     const [showImageUpload, setShowImageUpload] = useState(false);
 
-    const handleSubmit = async() =>{
-        if(!content.trim() && !imageUrl) return
+    const handleSubmit = async () => {
+        if (!content.trim() && !imageUrl) return
         setIsPosting(true);
-        try{
+        try {
             const result = await createPost(content, imageUrl);
-            if(result.success){
+            if (result?.success) {
                 // Reset form after successfully posted
                 setContent("")
                 setImageUrl("")
@@ -30,11 +31,10 @@ const CreatePost = () =>{
 
                 toast.success("Post successfully created!");
             }
-        } catch (error){
-        console.log("Failed creating post", error);
-        toast.error("Failed to creating post");
-        }
-        finally{
+        } catch (error) {
+            console.log("Failed creating post", error);
+            toast.error("Failed to creating post");
+        } finally {
             setIsPosting(false);
         }
     }
@@ -44,19 +44,28 @@ const CreatePost = () =>{
             <CardContent className={`pt-6`}>
                 <div className="space-y-4">
                     <div className="flex space-x-4">
-                     <Avatar className="w-10 h-10">
-                            <AvatarImage src={user?.imageUrl || "/avatar.png"} />
-                     </Avatar>
-                    <Textarea
-                        placeholder="What's on your mind?"
-                        className="min-h-[100px] resize-none border-none focus-visible:ring-0 p-0 text-base"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        disabled={isPosting}
-                    />
+                        <Avatar className="w-10 h-10">
+                            <AvatarImage src={user?.imageUrl || "/avatar.png"}/>
+                        </Avatar>
+                        <Textarea
+                            placeholder="What's on your mind?"
+                            className="min-h-[100px] resize-none border-none focus-visible:ring-0 p-0 text-base"
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            disabled={isPosting}
+                        />
                     </div>
 
-                    {/*TODO : HANDLE IMAGE UPLOADS*/}
+                    {(showImageUpload || imageUrl) && (
+                        <div className={`border rounded-lg p-4`}>
+                            <ImageUpload onChange={(url) => {
+                                setImageUrl(url)
+                                if (!url) {
+                                    setShowImageUpload(false)
+                                }
+                            }} value={imageUrl} endpoint={`postImage`}></ImageUpload>
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-between border-t pt-4">
                         <div className="flex space-x-2">
@@ -68,7 +77,7 @@ const CreatePost = () =>{
                                 onClick={() => setShowImageUpload(!showImageUpload)}
                                 disabled={isPosting}
                             >
-                                <ImageIcon className="size-4 mr-2" />
+                                <ImageIcon className="size-4 mr-2"/>
                                 Photo
                             </Button>
                         </div>
@@ -79,12 +88,12 @@ const CreatePost = () =>{
                         >
                             {isPosting ? (
                                 <>
-                                    <Loader2Icon className="size-4 mr-2 animate-spin" />
+                                    <Loader2Icon className="size-4 mr-2 animate-spin"/>
                                     Posting...
                                 </>
                             ) : (
                                 <>
-                                    <SendIcon className="size-4 mr-2" />
+                                    <SendIcon className="size-4 mr-2"/>
                                     Post
                                 </>
                             )}
